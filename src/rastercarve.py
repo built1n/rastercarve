@@ -58,6 +58,7 @@ def updatePos(pos):
 
 is_firstmove = True
 
+# we will negate the Y axis in all these
 def move(x, y, z, f = FEEDRATE):
     # override feedrate if this is our first move (and a plunge)
     global is_firstmove
@@ -73,6 +74,16 @@ def moveRapid(x, y, z):
 
 def moveSlow(x, y, z):
     move(x, y, z, PLUNGE_RATE)
+
+def moveRapidXY(x, y):
+    print("G0 X%f Y%f" % (x, -y))
+    updatePos(np.array([x, y, lastpos[2]]))
+
+def moveZ(z, f = PLUNGE_RATE):
+    print("G1 F%d Z%f" % (f, z))
+    newpos = lastpos
+    newpos[2] = z
+    updatePos(newpos)
 
 def getPix(image, x, y):
     # clamp
@@ -100,17 +111,41 @@ def engraveLine(img_interp, img_size, ppi, start, d, step = LINEAR_RESOLUTION):
     if not inBounds(img_size, v):
         print("NOT IN BOUNDS (PROGRAMMING ERROR): ", img_size, v, file=sys.stderr)
 
+    moveZ(SAFE_Z)
+    moveRapidXY(v[0], v[1])
+
+    first = True
+
     while inBounds(img_size, v):
         img_x = int(round(v[0] * ppi))
         img_y = int(round(v[1] * ppi))
         x, y = v
-        move(x, y, getDepth(getPix(img_interp, img_x, img_y)))
+        depth = getDepth(getPix(img_interp, img_x, img_y))
+        if not first:
+            move(x, y, depth)
+        else:
+            first = False
+            moveSlow(x, y, depth)
 
         v += step * d
     # return last engraved point
     return v - step * d
 
 def doEngrave(img):
+    # check parameter sanity
+    if ( not(0 <= LINE_ANGLE < 90) or
+         not(0 < TOOL_ANGLE < 180) or
+         not(0 < FEEDRATE) or
+         not(0 < PLUNGE_RATE) or
+         not(0 < SAFE_Z) or
+         not(0 < TRAVERSE_Z) or
+         not(0 < MAX_DEPTH) or
+         not(0 < DESIRED_WIDTH) or
+         not(1 <= LINE_SPACING_FACTOR) or
+         not(0 < LINEAR_RESOLUTION) or
+         not(1 <= SUPERSAMPLE) ):
+        eprint("WARNING: Invalid parameter(s).")
+
     # invert and convert to grayscale
     img = ~cv2.cvtColor(cv2.imread(sys.argv[1]), cv2.COLOR_BGR2GRAY)
 
@@ -166,13 +201,16 @@ def doEngrave(img):
 
     ### Dump stats
     eprint("=== Statistics ===")
-    eprint("Image size: %.2f\" wide by %.2f\" tall (%.1f PPI)" % (img_w, img_h, img_ppi))
+    eprint("Image dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2 (%.1f PPI)" % (img_w, img_h, img_w * img_h, img_ppi))
+    eprint("Max line depth: %.3f in" % (MAX_DEPTH))
+    eprint("Max line width: %.3f in (%.1f deg V-bit)" % (LINE_WIDTH, TOOL_ANGLE))
     eprint("Line spacing: %.3f in (%d%%)" % (LINE_SPACING, int(round(100 * LINE_SPACING_FACTOR))))
     eprint("Line angle: %.1f deg" % (LINE_ANGLE))
     eprint("Number of lines: %d" % (nlines))
     eprint("Interpolated image by f=%.1f (%.1f PPI)" % (SUPERSAMPLE, interp_ppi))
     eprint("Toolpath length: %.1f in" % (pathlen))
     eprint("Feed rate: %.1f in/min" % (FEEDRATE))
+    eprint("Plunge rate: %.1f in/min" % (PLUNGE_RATE))
     eprint("Approximate machining time: %.1f sec" % (pathlen / (FEEDRATE / 60)))
 
 def main():
