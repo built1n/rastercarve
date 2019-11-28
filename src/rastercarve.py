@@ -15,6 +15,7 @@ import sys
 FEEDRATE = 100 # in / min
 PLUNGE_RATE = 10 # in / min
 SAFE_Z = .2 # tool will start/end this high from material
+TRAVERSE_Z = 1
 MAX_DEPTH = .080 # full black is this many inches deep
 TOOL_ANGLE = 60 # included angle of tool (we assume a V-bit). change if needed
 
@@ -63,11 +64,11 @@ def move(x, y, z, f = FEEDRATE):
     if is_firstmove:
         f = PLUNGE_RATE
         is_firstmove = False
-    print("G1 F%d X%f Y%f Z%f" % (f, x, y, z))
+    print("G1 F%d X%f Y%f Z%f" % (f, x, -y, z))
     updatePos(np.array([x, y, z]))
 
 def moveRapid(x, y, z):
-    print("G0 X%f Y%f Z%f" % (x, y, z))
+    print("G0 X%f Y%f Z%f" % (x, -y, z))
     updatePos(np.array([x, y, z]))
 
 def moveSlow(x, y, z):
@@ -160,8 +161,8 @@ def doEngrave(img):
 
         end = engraveLine(img_interp, img_size, interp_ppi, start, -d)
 
-    moveSlow(end[0], end[1], SAFE_Z)
-    moveRapid(0, 0, SAFE_Z)
+    moveSlow(end[0], end[1], TRAVERSE_Z)
+    moveRapid(0, 0, TRAVERSE_Z)
 
     ### Dump stats
     eprint("=== Statistics ===")
