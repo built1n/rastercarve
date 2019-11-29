@@ -8,4 +8,9 @@ engrave raster images.
 You just need Python 3, OpenCV, and NumPy (i.e. `pip install ...`).
 
 Then, just run `python src/rastercarve.py IMAGE`, where `IMAGE` is a
-bitmap image in any format supported by OpenCV.
+bitmap image in any format supported by OpenCV. G-code is output to
+standard output.
+
+## Configuration
+
+Edit `rastercarve.py` to change the material and engraving settings.
