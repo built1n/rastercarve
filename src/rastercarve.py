@@ -28,23 +28,24 @@ import numpy as np
 import sys
 
 #### Machine configuration
-FEEDRATE = 140 # in / min
-PLUNGE_RATE = 60 # in / min
+FEED_RATE = 80 # in / min
+PLUNGE_RATE = 30 # in / min
+RAPID_RATE = 180 # in / min (used only for time estimation)
 SAFE_Z = .1 # tool will start/end this high from material
-TRAVERSE_Z = 1
+TRAVERSE_Z = 2 # ending height (in)
 MAX_DEPTH = .080 # full black is this many inches deep
-TOOL_ANGLE = 60 # included angle of tool (we assume a V-bit). change if needed
+TOOL_ANGLE = 30 # included angle of tool (we assume a V-bit). change if needed
 
 #### Image size
-DESIRED_WIDTH = 6 # desired width in inches (change this to scale image)
+DESIRED_WIDTH = 4 # desired width in inches (change this to scale image)
 
 #### Cutting Parameters
-LINE_SPACING_FACTOR = 1.2 # Vectric recommends 10-20% for wood
-LINE_ANGLE = 45 # angle of lines across image, [0-90) degrees
-LINEAR_RESOLUTION = .1 # spacing between image samples along a line (inches)
+LINE_SPACING_FACTOR = 1.0 # Vectric recommends 10-20% for wood
+LINE_ANGLE = 22.5 # angle of lines across image, [0-90) degrees
+LINEAR_RESOLUTION = .01 # spacing between image samples along a line (inches)
 
 #### Image interpolation
-SUPERSAMPLE = 5 # interpolate the image by this factor (caution: this scales the image by the square of its value)
+SUPERSAMPLE = 2 # scale heightmap by this factor before cutting
 
 #### G-Code options
 LINE_NOS = True # Generate line "N"umbers (required for ShopBot)
@@ -54,6 +55,7 @@ DEG2RAD = math.pi / 180
 DEPTH_TO_WIDTH = 2 * math.tan(TOOL_ANGLE / 2 * DEG2RAD) # multiply by this to get the width of a cut
 LINE_WIDTH = MAX_DEPTH * DEPTH_TO_WIDTH
 LINE_SPACING = LINE_SPACING_FACTOR * LINE_WIDTH # orthogonal distance between lines
+OUTPUT_PPI = 1 / LINEAR_RESOLUTION # linear PPI of engraved image
 
 # floating-point range
 def frange(x, y, jump):
@@ -70,15 +72,30 @@ def gcode(s):
     print(("N%d %s" % (line, s)) if LINE_NOS else s)
     line += 1
 
-pathlen = 0
+pathlen = 0 # in
+rapidlen = 0 # in
+plungelen = 0 # in
+movelen = 0 # in
+pathtime = 0 # sec
 lastpos = None
 
-def updatePos(pos):
-    global pathlen, lastpos
+def updatePos(pos, feedrate):
+    global pathlen, rapidlen, plungelen, movelen, lastpos, pathtime
     if lastpos is None:
         lastpos = pos
         return
-    pathlen += np.linalg.norm(pos - lastpos)
+    d = np.linalg.norm(pos - lastpos)
+    pathlen += d
+
+    # account for different types of moves separately
+    if feedrate == FEED_RATE:
+        movelen += d
+    elif feedrate == RAPID_RATE:
+        rapidlen += d
+    elif feedrate == PLUNGE_RATE:
+        plungelen += d
+
+    pathtime += d / feedrate
     lastpos = pos
 
 # reflect as needed
@@ -86,31 +103,31 @@ def transform(x, y):
     return x, -y
 
 # we will negate the Y axis in all these
-def move(x, y, z, f = FEEDRATE):
+def move(x, y, z, f = FEED_RATE):
     x, y = transform(x, y)
     gcode("G1 F%d X%f Y%f Z%f" % (f, x, y, z))
-    updatePos(np.array([x, y, z]))
+    updatePos(np.array([x, y, z]), f)
 
 def moveRapid(x, y, z):
     x, y = transform(x, y)
     gcode("G0 X%f Y%f Z%f" % (x, y, z))
-    updatePos(np.array([x, y, z]))
+    updatePos(np.array([x, y, z]), RAPID_RATE)
 
 def moveSlow(x, y, z):
     # we don't want to transform X, Y here
     move(x, y, z, PLUNGE_RATE)
-    updatePos(np.array([x, y, z]))
+    # we also don't update position (handled by move)
 
 def moveRapidXY(x, y):
     x, y = transform(x, y)
     gcode("G0 X%f Y%f" % (x, y))
-    updatePos(np.array([x, y, lastpos[2]]))
+    updatePos(np.array([x, y, lastpos[2]]), RAPID_RATE)
 
 def moveZ(z, f = PLUNGE_RATE):
     gcode("G1 F%d Z%f" % (f, z))
     newpos = lastpos
     newpos[2] = z
-    updatePos(newpos)
+    updatePos(newpos, f)
 
 def getPix(image, x, y):
     # clamp
@@ -136,7 +153,7 @@ def engraveLine(img_interp, img_size, ppi, start, d, step = LINEAR_RESOLUTION):
     d = d / np.linalg.norm(d)
 
     if not inBounds(img_size, v):
-        print("NOT IN BOUNDS (PROGRAMMING ERROR): ", img_size, v, file=sys.stderr)
+        print("WARNING: Engraving out of bounds! (Possible programming error, you idiot!): ", img_size, v, file=sys.stderr)
 
     moveZ(SAFE_Z)
     moveRapidXY(v[0], v[1])
@@ -162,15 +179,14 @@ def doEngrave(filename):
     # check parameter sanity
     if ( not(0 <= LINE_ANGLE < 90) or
          not(0 < TOOL_ANGLE < 180) or
-         not(0 < FEEDRATE) or
+         not(0 < FEED_RATE) or
          not(0 < PLUNGE_RATE) or
          not(0 < SAFE_Z) or
          not(0 < TRAVERSE_Z) or
          not(0 < MAX_DEPTH) or
          not(0 < DESIRED_WIDTH) or
          not(1 <= LINE_SPACING_FACTOR) or
-         not(0 < LINEAR_RESOLUTION) or
-         not(1 <= SUPERSAMPLE) ):
+         not(0 < LINEAR_RESOLUTION) ):
         eprint("WARNING: Invalid parameter(s).")
 
     # invert and convert to grayscale
@@ -182,8 +198,10 @@ def doEngrave(filename):
     img_ppi = orig_w / img_w # should be the same for X and Y directions
 
     # scale up the image with interpolation
-    img_interp = cv2.resize(img, None, fx = SUPERSAMPLE, fy = SUPERSAMPLE)
-    interp_ppi = img_ppi * SUPERSAMPLE
+    # we want the image DPI to match our engraving DPI (which is LINEAR_RESOLUTION)
+    scale_factor = SUPERSAMPLE * OUTPUT_PPI / img_ppi
+    img_interp = cv2.resize(img, None, fx = scale_factor, fy = scale_factor)
+    interp_ppi = img_ppi * scale_factor
 
     # preamble: https://www.instructables.com/id/How-to-write-G-code-basics/
     print("( Generated by rastercarve: github.com/built1n/rastercarve )")
@@ -241,17 +259,23 @@ def doEngrave(filename):
 
     ### Dump stats
     eprint("=== Statistics ===")
-    eprint("Image dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2 (%.1f PPI)" % (img_w, img_h, img_w * img_h, img_ppi))
+    eprint("Input resolution: %dx%dpx" % (orig_w, orig_h))
+    eprint("Output dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2" % (img_w, img_h, img_w * img_h))
     eprint("Max line depth: %.3f in" % (MAX_DEPTH))
     eprint("Max line width: %.3f in (%.1f deg V-bit)" % (LINE_WIDTH, TOOL_ANGLE))
-    eprint("Line spacing: %.3f in (%d%%)" % (LINE_SPACING, int(round(100 * LINE_SPACING_FACTOR))))
+    eprint("Line spacing: %.3f in (%d%% stepover)" % (LINE_SPACING, int(round(100 * LINE_SPACING_FACTOR))))
     eprint("Line angle: %.1f deg" % (LINE_ANGLE))
     eprint("Number of lines: %d" % (nlines))
-    eprint("Interpolated image by f=%.1f (%.1f PPI)" % (SUPERSAMPLE, interp_ppi))
-    eprint("Toolpath length: %.1f in" % (pathlen))
-    eprint("Feed rate: %.1f in/min" % (FEEDRATE))
+    eprint("Input resolution:  %.1f PPI" % (img_ppi))
+    eprint("Output resolution: %.1f PPI" % (OUTPUT_PPI))
+    eprint("Scaled image by f=%.2f (%.1f PPI)" % (scale_factor, interp_ppi))
+    eprint("Total toolpath length: %.1f in" % (pathlen))
+    eprint(" - Rapids:  %.1f in (%.1f s)" % (rapidlen, rapidlen / (RAPID_RATE / 60)))
+    eprint(" - Plunges: %.1f in (%.1f s)" % (plungelen, plungelen / (PLUNGE_RATE / 60)))
+    eprint(" - Moves:   %.1f in (%.1f s)" % (movelen, movelen / (FEED_RATE / 60)))
+    eprint("Feed rate: %.1f in/min" % (FEED_RATE))
     eprint("Plunge rate: %.1f in/min" % (PLUNGE_RATE))
-    eprint("Approximate machining time: %.1f sec" % (pathlen / (FEEDRATE / 60)))
+    eprint("Total machining time: %.1f sec" % (pathlen / (FEED_RATE / 60)))
 
 def main():
     if len(sys.argv) != 2:
