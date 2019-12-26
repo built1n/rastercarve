@@ -16,7 +16,7 @@
 import math
 import sys
 
-from __init__ import __version__
+from rastercarve import __version__
 
 import argparse
 import cv2 # image scaling
