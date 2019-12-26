@@ -62,13 +62,9 @@ CONSTRAINTS = [
 
 # floating-point range
 def frange(x, y, jump):
-    # this is hugely inefficient but gives us nice progress bar
-    # stats... what matters more?
-    ret = []
     while x < y:
-        ret.append(x)
+        yield x
         x += jump
-    return ret
 
 def eprint(s):
     if not hasattr(glob_args, 'quiet'):
@@ -246,8 +242,9 @@ def doEngrave():
     end = None
 
     for y in tqdm(frange(0, max_y - yspace, yspace * 2),
-                  desc='Generating G-code',
-                  unit=' lines',
+                  total = nlines / 2,
+                  desc = 'Generating G-code',
+                  unit = ' lines',
                   unit_scale = 2,
                   disable = hasattr(glob_args, 'quiet')): # we engrave two lines per loop
         start = np.array([0, y]).astype('float64')
