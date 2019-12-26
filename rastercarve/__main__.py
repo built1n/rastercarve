@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-##############################################################################
-# Rastercarve 1.0
+
+# Rastercarve
 #
 # Copyright (C) 2019 Franklin Wei
 #
@@ -13,23 +13,15 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 
-"""
-rastercarve: a raster engraving G-code generator
+import math
+import sys
 
-Usage: rastercarve.py IMAGE
-
-This program outputs G-code to engrave a bitmap image on a 3-axis
-milling machine.
-"""
+from __init__ import __version__
 
 import argparse
 import cv2 # image scaling
-import math
 import numpy as np # a little vector stuff
-import sys
 from tqdm import tqdm # progress bar
-
-__version__ = '1.0'
 
 glob_args = None
 
@@ -316,7 +308,8 @@ def doEngrave():
         eprint("%d suppressed debug message(s)." % (debug_msgs))
 
 def main():
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    parser = argparse.ArgumentParser(prog='rastercarve',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Generate G-code to engrave raster images.',
                                      epilog='Defaults are usually safe to leave unchanged.')
     parser.add_argument('filename', help='input image (any OpenCV-supported format)')

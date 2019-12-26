@@ -3,15 +3,11 @@
 This is a little Python script I wrote to generate 3-axis toolpaths to
 engrave raster images.
 
-## Dependencies
+## Installation
 
-You just need Python 3, OpenCV, tqdm, and NumPy (i.e. `pip install
-...`).
+`pip install rastercarve`
 
 ## Usage
-
-The program should be self-documenting. Run `src/rastercarve.py
---help` or see the output below.
 
 ```
 usage: rastercarve.py [-h] (--width WIDTH | --height HEIGHT) [-f FEED_RATE]
