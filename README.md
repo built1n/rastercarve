@@ -60,7 +60,7 @@ Defaults are usually safe to leave unchanged.
 ### Examples
 
 ```
-python src/rastercarve.py --width 10 examples/test.png > out.nc
+rastercarve --width 10 examples/test.png > out.nc
 ```
 
 Generate G-code to engrave `examples/test.png` into an image 10 inches
