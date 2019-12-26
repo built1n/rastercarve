@@ -311,7 +311,16 @@ def main():
     parser = argparse.ArgumentParser(prog='rastercarve',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Generate G-code to engrave raster images.',
-                                     epilog='Defaults are usually safe to leave unchanged.')
+                                     epilog=
+                                     """
+The default feeds have been found to be safe values for medium-density
+fiberboard (MDF). Experimenting with the STEPOVER, LINE_ANGLE, and
+LINEAR_RESOLUTION may yield improvements in engraving quality at the
+cost of increased machining time.
+
+On ShopBot machines, the --no-line-numbers flag must not be used,
+since the spindle will fail to start and damage the material. Use this
+flag with caution on other machines.""")
     parser.add_argument('filename', help='input image (any OpenCV-supported format)')
 
     dim_group = parser.add_argument_group('output dimensions', 'Exactly one required.')
@@ -323,7 +332,7 @@ def main():
     mach_group.add_argument('-f', help='engraving feed rate (in/min)', action='store', dest='feed_rate', default=DEF_FEED_RATE, type=float)
     mach_group.add_argument('-p', help='engraving plunge rate (in/min)', action='store', dest='plunge_rate', default=DEF_PLUNGE_RATE, type=float)
     mach_group.add_argument('--rapid', help='rapid traverse rate (for time estimation only)', action='store', dest='rapid_rate', default=DEF_RAPID_RATE, type=float)
-    mach_group.add_argument('-z', help='rapid Z traverse height (in)', action='store', dest='safe_z', default=DEF_SAFE_Z, type=float)
+    mach_group.add_argument('-z', help='rapid traverse height (in)', action='store', dest='safe_z', default=DEF_SAFE_Z, type=float)
     mach_group.add_argument('--end-z', help='Z height of final traverse (in)', action='store', dest='traverse_z', default=DEF_TRAVERSE_Z, type=float)
     mach_group.add_argument('-d', help='maximum engraving depth (in)', action='store', dest='max_depth', default=DEF_MAX_DEPTH, type=float)
     mach_group.add_argument('-t', help='included angle of tool (deg)', action='store', dest='tool_angle', default=DEF_TOOL_ANGLE, type=float)
