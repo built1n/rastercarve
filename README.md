@@ -14,8 +14,10 @@ The program should be self-documenting. Run `src/rastercarve.py
 --help` or see the output below.
 
 ```
-usage: rastercarve.py [-h] (--width WIDTH | --height HEIGHT) [-f FEED_RATE] [-p PLUNGE_RATE] [--rapid RAPID_RATE] [-z SAFE_Z]
-                      [--end-z TRAVERSE_Z] [-d MAX_DEPTH] [-t TOOL_ANGLE] [-a LINE_ANGLE] [-s STEPOVER] [-r LINEAR_RESOLUTION]
+usage: rastercarve.py [-h] (--width WIDTH | --height HEIGHT) [-f FEED_RATE]
+                      [-p PLUNGE_RATE] [--rapid RAPID_RATE] [-z SAFE_Z]
+                      [--end-z TRAVERSE_Z] [-d MAX_DEPTH] [-t TOOL_ANGLE]
+                      [-a LINE_ANGLE] [-s STEPOVER] [-r LINEAR_RESOLUTION]
                       [--no-line-numbers] [--debug] [-q] [--version]
                       filename
 
@@ -39,7 +41,8 @@ output dimensions:
 machine configuration:
   -f FEED_RATE          engraving feed rate (in/min) (default: 100)
   -p PLUNGE_RATE        engraving plunge rate (in/min) (default: 30)
-  --rapid RAPID_RATE    rapid traverse rate (for time estimation only) (default: 240)
+  --rapid RAPID_RATE    rapid traverse rate (for time estimation only)
+                        (default: 240)
   -z SAFE_Z             rapid Z traverse height (in) (default: 0.1)
   --end-z TRAVERSE_Z    Z height of final traverse (in) (default: 2)
   -d MAX_DEPTH          maximum engraving depth (in) (default: 0.08)
@@ -47,8 +50,10 @@ machine configuration:
 
 engraving parameters:
   -a LINE_ANGLE         angle of grooves from horizontal (deg) (default: 22.5)
-  -s STEPOVER           stepover percentage (affects spacing between lines) (default: 110)
-  -r LINEAR_RESOLUTION  distance between successive G-code points (in) (default: 0.01)
+  -s STEPOVER           stepover percentage (affects spacing between lines)
+                        (default: 110)
+  -r LINEAR_RESOLUTION  distance between successive G-code points (in)
+                        (default: 0.01)
 
 G-code parameters:
   --no-line-numbers     suppress G-code line numbers (dangerous on ShopBot!)
