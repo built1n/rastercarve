@@ -1,5 +1,7 @@
 # RasterCarve
 
+[![PyPI version](https://badge.fury.io/py/rastercarve.svg)](https://badge.fury.io/py/rastercarve) [![PyPI license](https://img.shields.io/pypi/l/rastercarve.svg)](https://pypi.python.org/pypi/rastercarve/) [![PyPI status](https://img.shields.io/pypi/status/rastercarve.svg)](https://pypi.python.org/pypi/rastercarve/)
+
 This is a little Python script I wrote to generate G-code toolpaths to
 engrave raster images.
 
