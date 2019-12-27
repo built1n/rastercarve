@@ -102,7 +102,7 @@ usage: rastercarve [-h] (--width WIDTH | --height HEIGHT) [-f FEED_RATE]
                    [-p PLUNGE_RATE] [--rapid RAPID_RATE] [-z SAFE_Z]
                    [--end-z TRAVERSE_Z] [-d MAX_DEPTH] [-t TOOL_ANGLE]
                    [-a LINE_ANGLE] [-s STEPOVER] [-r LINEAR_RESOLUTION]
-                   [--no-line-numbers] [--debug] [-q] [--version]
+                   [--dots] [--no-line-numbers] [--debug] [-q] [--version]
                    filename
 
 Generate G-code to engrave raster images.
@@ -138,6 +138,7 @@ engraving parameters:
                         (default: 110)
   -r LINEAR_RESOLUTION  distance between successive G-code points (in)
                         (default: 0.01)
+  --dots                engrave using dots instead of lines (experimental)
 
 G-code parameters:
   --no-line-numbers     suppress G-code line numbers (dangerous on ShopBot!)

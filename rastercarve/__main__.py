@@ -181,10 +181,17 @@ def engraveLine(img_interp, img_size, ppi, start, d, step):
         x, y = v
         depth = getDepth(getPix(img_interp, img_x, img_y))
         if not first:
-            move(x, y, depth, glob_args.feed_rate)
+            if hasattr(glob_args, 'pointmode'):
+                move(x, y, glob_args.safe_z, glob_args.feed_rate)
+                move(x, y, depth, glob_args.feed_rate)
+                move(x, y, glob_args.safe_z, glob_args.feed_rate)
+            else:
+                move(x, y, depth, glob_args.feed_rate)
         else:
             first = False
             moveSlow(x, y, depth)
+            if hasattr(glob_args, 'pointmode'):
+                moveSlow(x, y, glob_args.safe_z)
 
         v += step * d
     # return last engraved point
@@ -338,6 +345,8 @@ flag with caution on other machines.""")
     cut_group.add_argument('-a', help='angle of grooves from horizontal (deg)', action='store', dest='line_angle', default=DEF_LINE_ANGLE, type=float)
     cut_group.add_argument('-s', help='stepover percentage (affects spacing between lines)', action='store', dest='stepover', default=DEF_STEPOVER, type=float)
     cut_group.add_argument('-r', help='distance between successive G-code points (in)', action='store', dest='linear_resolution', default=DEF_LINEAR_RESOLUTION, type=float)
+    cut_group.add_argument('--dots', help='engrave using dots instead of lines (experimental)', action='store_true', dest='pointmode', default=argparse.SUPPRESS)
+
 
     gcode_group = parser.add_argument_group('G-code parameters')
     gcode_group.add_argument('--no-line-numbers', help='suppress G-code line numbers (dangerous on ShopBot!)', action='store_true', dest='suppress_linenos', default=argparse.SUPPRESS)
