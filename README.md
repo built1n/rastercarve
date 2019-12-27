@@ -19,8 +19,8 @@ unsuitable due to their high cost.
 
 Examples below:
 
-<img src="https://www.fwei.tk/blog/d-day.jpg" width="40%">
-<img src="https://www.fwei.tk/blog/baby-yoda.png" width="40%">
+<img src="https://www.fwei.tk/blog/d-day.jpg" width="100%">
+<img src="https://www.fwei.tk/blog/baby-yoda.png" width="100%">
 
 # Installation
 
