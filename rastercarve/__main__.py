@@ -156,7 +156,7 @@ def getDepth(pix):
     return -float(pix) / 256 * glob_args.max_depth
 
 def inBounds(img_size, x):
-    return 0 <= x[0] and x[0] < img_size[0] and 0 <= x[1] and x[1] < img_size[1]
+    return 0 <= x[0] and x[0] <= img_size[0] and 0 <= x[1] and x[1] <= img_size[1]
 
 # Engrave one line across the image. start and d are vectors in the
 # output space representing the start point and direction of
@@ -166,16 +166,17 @@ def engraveLine(img_interp, img_size, ppi, start, d, step):
     v = start
     d = d / np.linalg.norm(d)
 
-    if not inBounds(img_size, v):
-        debug("Refusing to engrave out of bounds. (Possible programming error, you idiot!): %s, %s" % (v, img_size))
-        return start
+    # disabled -FW
+    #    if not inBounds(img_size, v):
+    #        debug("Refusing to engrave out of bounds. (Possible programming error, you idiot!): %s, %s" % (v, img_size))
+    #        return start
 
     moveZ(glob_args.safe_z, glob_args.plunge_rate)
     moveRapidXY(v[0], v[1])
 
     first = True
-
-    while inBounds(img_size, v):
+    quitNext = False
+    while True:
         img_x = int(round(v[0] * ppi))
         img_y = int(round(v[1] * ppi))
         x, y = v
@@ -193,9 +194,21 @@ def engraveLine(img_interp, img_size, ppi, start, d, step):
             if hasattr(glob_args, 'pointmode'):
                 moveSlow(x, y, glob_args.safe_z)
 
+        if quitNext:
+            return v
         v += step * d
+
+        # engrave to the edge
+        if not inBounds(img_size, v):
+            v -= step * d
+            c = min(-v[1] / d[1], (img_size[0] - v[0]) / d[0]) if d[0] > 0 else \
+                min(-v[0] / d[0], (img_size[1] - v[1]) / d[1])
+            v += c * d
+
+            quitNext = True
+
     # return last engraved point
-    return v - step * d
+    return v
 
 def checkCondition(cond):
     success = eval(cond)
@@ -260,7 +273,7 @@ def doEngrave():
         if d[1] != 0:
             c = (img_h - y) / d[1] # solve (start + cd)_y = h for c
             if c >= 0:
-                start += (c + glob_args.linear_resolution) * d
+                start += c * d
 
         start = engraveLine(img_interp, img_size, interp_ppi, start, d, glob_args.linear_resolution)
 
@@ -279,7 +292,7 @@ def doEngrave():
         if start[0] >= img_w:
             debug("Special case TRIGGERED")
             c = (start[0] - img_w) / d[0]
-            start -= (c + glob_args.linear_resolution * .01) * d
+            start -= c * d
 
         end = engraveLine(img_interp, img_size, interp_ppi, start, -d, glob_args.linear_resolution)
 
