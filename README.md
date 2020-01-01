@@ -7,7 +7,7 @@ engrave raster images.
 
 A hosted version of the script is available at
 https://rastercarve.live
-([Github](https://github.com/built1n/rastercarve-live). There is also
+([Github](https://github.com/built1n/rastercarve-live)). There is also
 a standalone custom G-code previewer available at
 https://github.com/built1n/rastercarve-preview.
 
