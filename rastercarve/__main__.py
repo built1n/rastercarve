@@ -201,7 +201,8 @@ def engraveLine(img_interp, img_size, ppi, start, d, step):
         # engrave to the edge
         if not inBounds(img_size, v):
             v -= step * d
-            c = min(-v[1] / d[1], (img_size[0] - v[0]) / d[0]) if d[0] > 0 else \
+            c = ((img_size[0] - v[0]) / d[0]) if (d[0] > 0 and d[1] == 0) else \
+                min(-v[1] / d[1], (img_size[0] - v[0]) / d[0]) if (d[0] > 0 and d[1] != 0) else \
                 min(-v[0] / d[0], (img_size[1] - v[1]) / d[1])
             v += c * d
 
