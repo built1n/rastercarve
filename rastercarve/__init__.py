@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Rastercarve
+# RasterCarve
 #
-# Copyright (C) 2019 Franklin Wei
+# Copyright (C) 2019-2020 Franklin Wei
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -13,4 +13,4 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
