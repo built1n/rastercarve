@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Rastercarve
+# RasterCarve
 #
-# Copyright (C) 2019 Franklin Wei
+# Copyright (C) 2019-2020 Franklin Wei
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@ from rastercarve import __version__
 
 import argparse
 import cv2 # image scaling
+import json
 import numpy as np # a little vector stuff
 from tqdm import tqdm # progress bar
 
@@ -217,6 +218,48 @@ def checkCondition(cond):
         eprint("ERROR: Invalid parameter: %s" % cond)
     return success
 
+def dump_stats(orig_size, img_size, line_width, line_spacing,
+               nlines, img_ppi, output_ppi, scale_factor, interp_ppi, pathlen,
+               rapidlen, plungelen, movelen, pathtime):
+    eprint("=== Statistics ===")
+    eprint("Input resolution: %dx%d px" % (orig_size[0], orig_size[1]))
+    eprint("Output dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2" % (img_size[0], img_size[1], img_size[0] * img_size[1]))
+    eprint("Max line depth: %.3f in" % (glob_args.max_depth))
+    eprint("Max line width: %.3f in (%.1f deg V-bit)" % (line_width, glob_args.tool_angle))
+    eprint("Line spacing: %.3f in (%d%% stepover)" % (line_spacing, int(round(glob_args.stepover))))
+    eprint("Line angle: %.1f deg" % (glob_args.line_angle))
+    eprint("Number of lines: %d" % (nlines))
+    eprint("Input resolution:  %.1f PPI" % (img_ppi))
+    eprint("Output resolution: %.1f PPI" % (output_ppi))
+    eprint("Scaled image by f=%.2f (%.1f PPI)" % (scale_factor, interp_ppi))
+    eprint("Total toolpath length: %.1f in" % (pathlen))
+    eprint(" - Rapids:  %.1f in (%.1f s)" % (rapidlen, rapidlen / (glob_args.rapid_rate / 60)))
+    eprint(" - Plunges: %.1f in (%.1f s)" % (plungelen, plungelen / (glob_args.plunge_rate / 60)))
+    eprint(" - Moves:   %.1f in (%.1f s)" % (movelen, movelen / (glob_args.feed_rate / 60)))
+    eprint("Feed rate: %.1f in/min" % (glob_args.feed_rate))
+    eprint("Plunge rate: %.1f in/min" % (glob_args.plunge_rate))
+    eprint("Estimated machining time: %.1f sec" % (pathtime))
+
+    if hasattr(glob_args, 'json_dest'):
+        with open(glob_args.json_dest, 'w') as f:
+            # only dump stats relevant to web frontend
+            stats = {
+                'output_dimensions': {
+                    'width':  img_size[0],
+                    'height': img_size[1]
+                },
+                'line_width': line_width,
+                'line_spacing': line_spacing,
+                'nlines': int(nlines),
+                'img_ppi': img_ppi,
+                'output_ppi': output_ppi,
+                'interp_ppi': interp_ppi,
+                'pathlen': pathlen,
+                'pathtime': pathtime
+            }
+
+            json.dump(stats, f)
+
 def doEngrave():
     # check parameter sanity
     for c in CONSTRAINTS:
@@ -227,9 +270,10 @@ def doEngrave():
     # invert and convert to grayscale
     img = ~cv2.cvtColor(cv2.imread(glob_args.filename), cv2.COLOR_BGR2GRAY)
 
-    orig_h, orig_w = img.shape[:2]
+    orig_h, orig_w = orig_size = img.shape[:2] # pixels
 
-    img_w, img_h = img_size = (glob_args.width, glob_args.width * (orig_h / orig_w)) if hasattr(glob_args, 'width') else (glob_args.height * (orig_w / orig_h), glob_args.height)
+    img_w, img_h = img_size = (glob_args.width, glob_args.width * (orig_h / orig_w)) if hasattr(glob_args, 'width') else (glob_args.height * (orig_w / orig_h), glob_args.height) # inches
+
     img_ppi = orig_w / img_w # should be the same for X and Y directions
 
     depth2width = 2 * math.tan(glob_args.tool_angle / 2 * DEG2RAD) # multiply by this to get the width of a cut
@@ -302,25 +346,9 @@ def doEngrave():
 
     gcode("M05") # stop spindle
 
-    ### Dump stats
-    eprint("=== Statistics ===")
-    eprint("Input resolution: %dx%d px" % (orig_w, orig_h))
-    eprint("Output dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2" % (img_w, img_h, img_w * img_h))
-    eprint("Max line depth: %.3f in" % (glob_args.max_depth))
-    eprint("Max line width: %.3f in (%.1f deg V-bit)" % (line_width, glob_args.tool_angle))
-    eprint("Line spacing: %.3f in (%d%% stepover)" % (line_spacing, int(round(glob_args.stepover))))
-    eprint("Line angle: %.1f deg" % (glob_args.line_angle))
-    eprint("Number of lines: %d" % (nlines))
-    eprint("Input resolution:  %.1f PPI" % (img_ppi))
-    eprint("Output resolution: %.1f PPI" % (output_ppi))
-    eprint("Scaled image by f=%.2f (%.1f PPI)" % (scale_factor, interp_ppi))
-    eprint("Total toolpath length: %.1f in" % (pathlen))
-    eprint(" - Rapids:  %.1f in (%.1f s)" % (rapidlen, rapidlen / (glob_args.rapid_rate / 60)))
-    eprint(" - Plunges: %.1f in (%.1f s)" % (plungelen, plungelen / (glob_args.plunge_rate / 60)))
-    eprint(" - Moves:   %.1f in (%.1f s)" % (movelen, movelen / (glob_args.feed_rate / 60)))
-    eprint("Feed rate: %.1f in/min" % (glob_args.feed_rate))
-    eprint("Plunge rate: %.1f in/min" % (glob_args.plunge_rate))
-    eprint("Estimated machining time: %.1f sec" % (pathtime))
+    dump_stats(orig_size, img_size, line_width, line_spacing,
+               nlines, img_ppi, output_ppi, scale_factor, interp_ppi, pathlen,
+               rapidlen, plungelen, movelen, pathtime)
 
     if not hasattr(glob_args, 'debug') and debug_msgs > 0:
         eprint("%d suppressed debug message(s)." % (debug_msgs))
@@ -365,6 +393,7 @@ flag with caution on other machines.""")
     gcode_group = parser.add_argument_group('G-code parameters')
     gcode_group.add_argument('--no-line-numbers', help='suppress G-code line numbers (dangerous on ShopBot!)', action='store_true', dest='suppress_linenos', default=argparse.SUPPRESS)
 
+    parser.add_argument('--json', help='dump statistics in JSON format', action='store', dest='json_dest', default=argparse.SUPPRESS)
     parser.add_argument('--debug', help='print debug messages', action='store_true', dest='debug', default=argparse.SUPPRESS)
     parser.add_argument('-q', help='disable progress and statistics', action='store_true', dest='quiet', default=argparse.SUPPRESS)
     parser.add_argument('--version', help="show program's version number and exit", action='version', version=__version__)
