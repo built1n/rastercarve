@@ -397,7 +397,7 @@ since the spindle will fail to start and damage the material. Use this
 flag with caution on other machines.""")
     parser.add_argument('filename', help='input image (any OpenCV-supported format)')
 
-    dim_group = parser.add_argument_group('output dimensions', 'Exactly one required.')
+    dim_group = parser.add_argument_group('output dimensions', 'Exactly one required. Image will be scaled while maintaining aspect ratio.')
     mutex_group = dim_group.add_mutually_exclusive_group(required=True)
     mutex_group.add_argument('--width', help='output width (in)', action='store', dest='width', type=float, default=argparse.SUPPRESS)
     mutex_group.add_argument('--height', help='output height (in)', action='store', dest='height', type=float, default=argparse.SUPPRESS)
