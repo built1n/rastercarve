@@ -44,6 +44,7 @@ DEF_LINEAR_RESOLUTION = .01 # spacing between image samples along a line (inches
 
 #### G-code parameters
 DEF_PREAMBLE = "G00 G90 G80 G28 G17 G20 G40 G49\nM03"
+DEF_PREAMBLE_METRIC = "G00 G90 G80 G28 G17 G21 G40 G49\nM03"
 DEF_EPILOGUE = "M05"
 
 #### Image interpolation
@@ -51,6 +52,11 @@ SUPERSAMPLE = 2 # scale heightmap by this factor before cutting
 
 #### Internal stuff - don't mess with this
 DEG2RAD = math.pi / 180
+
+# Unit names
+UNIT_LONG = "in"
+UNIT_SHORT = "\""
+MM_LONG = MM_SHORT = "mm"
 
 #### Parameter constraints
 CONSTRAINTS = [
@@ -63,7 +69,8 @@ CONSTRAINTS = [
     '0 < glob_args.max_depth',
     '100 <= glob_args.stepover',
     '0 < glob_args.linear_resolution',
-    '(hasattr(glob_args, "height") and glob_args.height > 0) or (hasattr(glob_args, "width") and glob_args.width > 0)'
+    '(hasattr(glob_args, "height") and glob_args.height > 0) or (hasattr(glob_args, "width") and glob_args.width > 0)',
+    'not (hasattr(glob_args, "metric") and (hasattr(glob_args, "preamble") or hasattr(glob_args, "preamble_file")))'
 ]
 
 # floating-point range
@@ -232,23 +239,23 @@ def dump_stats(orig_size, img_size, line_width, line_spacing,
                nlines, img_ppi, output_ppi, scale_factor, interp_ppi, pathlen,
                rapidlen, plungelen, movelen, pathtime):
     eprint("=== Statistics ===")
-    eprint("Input resolution: %dx%d px" % (orig_size[0], orig_size[1]))
-    eprint("Output dimensions: %.2f\" wide by %.2f\" tall = %.1f in^2" % (img_size[0], img_size[1], img_size[0] * img_size[1]))
-    eprint("Max line depth: %.3f in" % (glob_args.max_depth))
-    eprint("Max line width: %.3f in (%.1f deg V-bit)" % (line_width, glob_args.tool_angle))
-    eprint("Line spacing: %.3f in (%d%% stepover)" % (line_spacing, int(round(glob_args.stepover))))
-    eprint("Line angle: %.1f deg" % (glob_args.line_angle))
-    eprint("Number of lines: %d" % (nlines))
-    eprint("Input resolution:  %.1f PPI" % (img_ppi))
-    eprint("Output resolution: %.1f PPI" % (output_ppi))
-    eprint("Scaled image by f=%.2f (%.1f PPI)" % (scale_factor, interp_ppi))
-    eprint("Total toolpath length: %.1f in" % (pathlen))
-    eprint(" - Rapids:  %.1f in (%.1f sec)" % (rapidlen, rapidlen / (glob_args.rapid_rate / 60)))
-    eprint(" - Plunges: %.1f in (%.1f sec)" % (plungelen, plungelen / (glob_args.plunge_rate / 60)))
-    eprint(" - Moves:   %.1f in (%.1f sec)" % (movelen, movelen / (glob_args.feed_rate / 60)))
-    eprint("Feed rate: %.1f in/min" % (glob_args.feed_rate))
-    eprint("Plunge rate: %.1f in/min" % (glob_args.plunge_rate))
-    eprint("Estimated machining time: %.1f sec" % (pathtime))
+    eprint(f"Input resolution: %dx%d px" % (orig_size[0], orig_size[1]))
+    eprint(f"Output dimensions: %.2f{UNIT_SHORT} wide by %.2f{UNIT_SHORT} tall = %.1f {UNIT_LONG}^2" % (img_size[0], img_size[1], img_size[0] * img_size[1]))
+    eprint(f"Max line depth: %.3f {UNIT_LONG}" % (glob_args.max_depth))
+    eprint(f"Max line width: %.3f {UNIT_LONG} (%.1f deg V-bit)" % (line_width, glob_args.tool_angle))
+    eprint(f"Line spacing: %.3f {UNIT_LONG} (%d%% stepover)" % (line_spacing, int(round(glob_args.stepover))))
+    eprint(f"Line angle: %.1f deg" % (glob_args.line_angle))
+    eprint(f"Number of lines: %d" % (nlines))
+    eprint(f"Input resolution:  %.1f PPI" % (img_ppi))
+    eprint(f"Output resolution: %.1f PPI" % (output_ppi))
+    eprint(f"Scaled image by f=%.2f (%.1f PPI)" % (scale_factor, interp_ppi))
+    eprint(f"Total toolpath length: %.1f {UNIT_LONG}" % (pathlen))
+    eprint(f" - Rapids:  %.1f {UNIT_LONG} (%.1f sec)" % (rapidlen, rapidlen / (glob_args.rapid_rate / 60)))
+    eprint(f" - Plunges: %.1f {UNIT_LONG} (%.1f sec)" % (plungelen, plungelen / (glob_args.plunge_rate / 60)))
+    eprint(f" - Moves:   %.1f {UNIT_LONG} (%.1f sec)" % (movelen, movelen / (glob_args.feed_rate / 60)))
+    eprint(f"Feed rate: %.1f {UNIT_LONG}/min" % (glob_args.feed_rate))
+    eprint(f"Plunge rate: %.1f {UNIT_LONG}/min" % (glob_args.plunge_rate))
+    eprint(f"Estimated machining time: %.1f sec" % (pathtime))
 
     if hasattr(glob_args, 'json_dest'):
         with open(glob_args.json_dest, 'w') as f:
@@ -287,12 +294,20 @@ def getPreambleEpilogue():
 
     return pre, epi
 
+def setMetric():
+    global DEF_PREAMBLE, UNIT_LONG, UNIT_SHORT
+    DEF_PREAMBLE = DEF_PREAMBLE_METRIC
+    UNIT_LONG, UNIT_SHORT = MM_LONG, MM_SHORT
+
 def doEngrave():
     # check parameter sanity
     for c in CONSTRAINTS:
         if not checkCondition(c):
             eprint("Refusing to generate G-code.")
             return
+
+    if hasattr(glob_args, 'metric'):
+        setMetric()
 
     preamble, epilogue = getPreambleEpilogue()
 
@@ -420,6 +435,7 @@ flag with caution on other machines.""")
 
     gcode_group = parser.add_argument_group('G-code parameters')
 
+    gcode_group.add_argument('--metric', help='change all units to millimeters (sets G21); cannot be used with --preamble or --preamble-file', action='store_true', dest='metric', default=argparse.SUPPRESS)
     gcode_group.add_argument('--no-line-numbers', help='suppress G-code line numbers (dangerous on ShopBot!)', action='store_true', dest='suppress_linenos', default=argparse.SUPPRESS)
 
     preamble_group = gcode_group.add_mutually_exclusive_group(required=False)
