@@ -106,9 +106,12 @@ produced the results shown earlier.
 ```
 usage: rastercarve [-h] (--width WIDTH | --height HEIGHT) [-f FEED_RATE]
                    [-p PLUNGE_RATE] [--rapid RAPID_RATE] [-z SAFE_Z]
-                   [--end-z TRAVERSE_Z] [-d MAX_DEPTH] [-t TOOL_ANGLE]
+                   [--end-z TRAVERSE_Z] [-t TOOL_ANGLE] [-d MAX_DEPTH]
                    [-a LINE_ANGLE] [-s STEPOVER] [-r LINEAR_RESOLUTION]
-                   [--dots] [--no-line-numbers] [--debug] [-q] [--version]
+                   [--dots] [--no-line-numbers]
+                   [--preamble PREAMBLE | --preamble-file PREAMBLE_FILE]
+                   [--epilogue EPILOGUE | --epilogue-file EPILOGUE_FILE]
+                   [--json JSON_DEST] [--debug] [-q] [--version]
                    filename
 
 Generate G-code to engrave raster images.
@@ -118,12 +121,13 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --json JSON_DEST      dump statistics in JSON format
   --debug               print debug messages
   -q                    disable progress and statistics
   --version             show program's version number and exit
 
 output dimensions:
-  Exactly one required.
+  Exactly one required. Image will be scaled while maintaining aspect ratio.
 
   --width WIDTH         output width (in)
   --height HEIGHT       output height (in)
@@ -135,10 +139,10 @@ machine configuration:
                         (default: 240)
   -z SAFE_Z             rapid traverse height (in) (default: 0.1)
   --end-z TRAVERSE_Z    Z height of final traverse (in) (default: 2)
-  -d MAX_DEPTH          maximum engraving depth (in) (default: 0.08)
   -t TOOL_ANGLE         included angle of tool (deg) (default: 30)
 
 engraving parameters:
+  -d MAX_DEPTH          maximum engraving depth (in) (default: 0.08)
   -a LINE_ANGLE         angle of grooves from horizontal (deg) (default: 22.5)
   -s STEPOVER           stepover percentage (affects spacing between lines)
                         (default: 110)
@@ -148,6 +152,17 @@ engraving parameters:
 
 G-code parameters:
   --no-line-numbers     suppress G-code line numbers (dangerous on ShopBot!)
+  --preamble PREAMBLE   override the default G-code preamble; to specify
+                        multiple lines on the command line, use $'' strings
+                        with \n; each line of the preamble will be prepended
+                        with a line number, except when used with --no-line-
+                        numbers
+  --preamble-file PREAMBLE_FILE
+                        like --preamble, but read from a file
+  --epilogue EPILOGUE   override the default G-code epilogue; see above notes
+                        for --preamble
+  --epilogue-file EPILOGUE_FILE
+                        like --epilogue, but read from a file
 
 The default feeds have been found to be safe values for medium-density
 fiberboard (MDF). Experimenting with the STEPOVER, LINE_ANGLE, and
