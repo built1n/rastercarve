@@ -13,4 +13,4 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 
-__version__ = '1.0.6'
+__version__ = '1.0.7'
