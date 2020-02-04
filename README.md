@@ -23,16 +23,14 @@ the right sequence of commands for your machine to engrave it. This is
 not the first program that can do this, but existing solutions are
 unsuitable due to their high cost.
 
-Examples below:
+The program's output has been thoroughly tested on a ShopBot Desktop
+MAX, which produced the results shown below, and a ShopBot PRTalpha.
+Various users have reported successful results on X-Carve and Shapeoko
+machines, among others.
 
 <img src="https://www.fwei.tk/blog/d-day.jpg" width="100%" />
 <img src="https://raw.githubusercontent.com/built1n/rastercarve/master/examples/pen_plotter.jpg" width="100%" />
 <img src="https://www.fwei.tk/blog/baby-yoda.png" width="100%" />
-
-The program's output has been tested on a ShopBot Desktop MAX, which
-produced the results shown earlier, and a ShopBot PRTalpha. Various
-users have reported successful results on an X-Carve and Shapeoko
-machines, among others.
 
 # Installation
 
