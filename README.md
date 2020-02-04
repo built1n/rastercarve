@@ -25,8 +25,14 @@ unsuitable due to their high cost.
 
 Examples below:
 
-<img src="https://www.fwei.tk/blog/d-day.jpg" width="100%">
-<img src="https://www.fwei.tk/blog/baby-yoda.png" width="100%">
+<img src="https://www.fwei.tk/blog/d-day.jpg" width="100%" />
+<img src="https://raw.githubusercontent.com/built1n/rastercarve/master/examples/pen_plotter.jpg" width="100%" />
+<img src="https://www.fwei.tk/blog/baby-yoda.png" width="100%" />
+
+The program's output has been tested on a ShopBot Desktop MAX, which
+produced the results shown earlier, and a ShopBot PRTalpha. Various
+users have reported successful results on an X-Carve and Shapeoko
+machines, among others.
 
 # Installation
 
@@ -98,8 +104,13 @@ location. Double check that the bottom right corner is in bounds.
 right corner and work its way down to the bottom right in a serpentine
 fashion.
 
-The program's output has been tested on a ShopBot Desktop MAX, which
-produced the results shown earlier.
+## Ramping
+
+Some tools (e.g. ShopBot) have an option to control acceleration ramping
+speeds. The intricate nature of many raster engraving toolpaths generated
+with this program tend to trigger unneccessary speed ramping on these
+machines, leading to very slow cycle times. The solution to this is to
+set more aggressive ramping values. (ShopBot users can use [VR].)
 
 # Advanced
 
@@ -171,6 +182,52 @@ increased machining time. On ShopBot machines, the --no-line-numbers flag must
 not be used, since the spindle will fail to start and damage the material. Use
 this flag with caution on other machines.
 ```
+
+## G-code Customization
+
+The G-code produced should work out-of-the-box on ShopBot machines. Other
+machines may need some fine-tuning.
+
+The default G-code preamble is
+
+```
+G00 G90 G80 G28 G17 G20 G40 G49
+M03
+```
+
+The `--preamble[-file]` and `--epilogue[-file]` options allow you to specify
+a custom G-code header or footer to override the default. Note that in writing
+a custom preamble/epilogue, you should *not* include line numbers; the program
+will automatically insert them on each line of the supplied preamble/epilogue.
+
+If the default preamble is giving you issues, try the following stripped-down
+version:
+
+```
+G20
+```
+
+This will only tell the machine to use inch units (`G20`) and nothing else. It
+should work with virtually any machine.
+
+## Metric Units
+
+Passing the `--metric` flag will replace the default `G20` directive with `G21`
+to force metric units. If this is passed, all measurements given will be
+interpreted as millimeters. E.g., `--width 100` will be interpreted as a width
+of 100mm. (That is to say, the `--metric` flag is comparatively dumb; no
+internal unit scaling takes place.)
+
+Note that the `--metric` flag cannot be used in conjunction with
+`--preamble[-file]`. If a custom preamble is necessary, just include `G21`.
+
+## Pen Plotting
+
+The generated toolpaths produce excellent results when used with pen plotters
+instead of engraving bits (see above). The machine setup is a little more
+complicated, though: the Z height must be set to half the maximum engraving
+depth *above* the material for the black and white regions to be drawn
+correctly.
 
 # Related
 
