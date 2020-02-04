@@ -203,6 +203,7 @@ version:
 
 ```
 G20
+M03
 ```
 
 This will only tell the machine to use inch units (`G20`) and nothing else. It
