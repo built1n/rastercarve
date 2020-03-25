@@ -43,8 +43,8 @@ DEF_LINE_ANGLE = 22.5 # angle of lines across image, [0-90) degrees
 DEF_LINEAR_RESOLUTION = .01 # spacing between image samples along a line (inches)
 
 #### G-code parameters
-DEF_PREAMBLE = "G00 G90 G80 G28 G17 G20 G40 G49\nM03"
-DEF_PREAMBLE_METRIC = "G00 G90 G80 G28 G17 G21 G40 G49\nM03"
+DEF_PREAMBLE = "G00 G20\nM03"
+DEF_PREAMBLE_METRIC = "G00 G21\nM03"
 DEF_EPILOGUE = "M05"
 
 #### Image interpolation
