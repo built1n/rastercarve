@@ -186,28 +186,30 @@ this flag with caution on other machines.
 The G-code produced should work out-of-the-box on ShopBot machines. Other
 machines may need some fine-tuning.
 
+### Preamble
+
 The default G-code preamble is
 
 ```
-G00 G90 G80 G28 G17 G20 G40 G49
+G00 G20
 M03
 ```
+
+This tells the machine to use inch units (`G20`) and then starts the
+spindle (`M03`).
+
+The default G-code epilogue is
+
+```
+M05
+```
+
+This does nothing but stop the spindle.
 
 The `--preamble[-file]` and `--epilogue[-file]` options allow you to specify
 a custom G-code header or footer to override the default. Note that in writing
 a custom preamble/epilogue, you should *not* include line numbers; the program
 will automatically insert them on each line of the supplied preamble/epilogue.
-
-If the default preamble is giving you issues, try the following stripped-down
-version:
-
-```
-G20
-M03
-```
-
-This will only tell the machine to use inch units (`G20`) and nothing else. It
-should work with virtually any machine.
 
 ## Metric Units
 
@@ -215,10 +217,11 @@ Passing the `--metric` flag will replace the default `G20` directive with `G21`
 to force metric units. If this is passed, all measurements given will be
 interpreted as millimeters. E.g., `--width 100` will be interpreted as a width
 of 100mm. (That is to say, the `--metric` flag is comparatively dumb; no
-internal unit scaling takes place.)
+internal unit scaling takes place -- only the preamble is changed.)
 
 Note that the `--metric` flag cannot be used in conjunction with
-`--preamble[-file]`. If a custom preamble is necessary, just include `G21`.
+`--preamble[-file]`. If a custom preamble is necessary with metric
+units, just include `G21` in the custom preamble.
 
 ## Pen Plotting
 
