@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import setuptools
 from rastercarve import __version__
 
@@ -25,7 +26,7 @@ setuptools.setup(
         "Topic :: Utilities",
     ],
     python_requires='>=3.6',
-    install_requires=["opencv-python", "numpy", "tqdm", "argparse"],
+    install_requires=["numpy", "tqdm", "argparse"] + ["opencv-python"] if os.getenv("SETUP_IGNORE_OPENCV", "0")=="0" else [],
     entry_points={
         "console_scripts": [
             "rastercarve=rastercarve.__main__:main",
