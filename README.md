@@ -28,9 +28,9 @@ MAX, which produced the results shown below, and a ShopBot PRTalpha.
 Various users have reported successful results on X-Carve and Shapeoko
 machines, among others.
 
-<img src="https://www.fwei.tk/blog/d-day.jpg" width="100%" />
+<img src="https://www.franklinwei.com/blog/d-day.jpg" width="100%" />
 <img src="https://raw.githubusercontent.com/built1n/rastercarve/master/examples/pen_plotter.jpg" width="100%" />
-<img src="https://www.fwei.tk/blog/baby-yoda.png" width="100%" />
+<img src="https://www.franklinwei.com/blog/baby-yoda.png" width="100%" />
 
 # Installation
 
